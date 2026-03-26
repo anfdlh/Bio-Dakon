@@ -549,6 +549,7 @@ function updateLanyardUI(d) {
             }
 
         } else {
+            // No activity active
             container.innerHTML = `
                 <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-bolt" style="color: var(--color-discord);"></i> AKTIVITASE DAKON SAK IKI</div>
                 <div class="lanyard-content">
@@ -654,11 +655,12 @@ async function sendGuestbookMessage() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
+                content: "<@758184274330648597> You got a new secret message!",
                 username: "Anonymous Dakon",
                 avatar_url: "https://cdn-icons-png.flaticon.com/512/3011/3011270.png",
                 embeds: [{
                     title: "💌 New Secret Message!",
-                    description: message,
+                    description: "```\n" + message + "\n```",
                     color: 16729344,
                     timestamp: new Date().toISOString()
                 }]
