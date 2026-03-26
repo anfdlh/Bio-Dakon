@@ -875,7 +875,7 @@ body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius
 .guestbook-btn {
     align-self: flex-end;
     padding: 12px 24px;
-    background: var(--color-primary);
+    background: linear-gradient(135deg, rgba(88, 101, 242, 0.15) 0%, rgba(88, 101, 242, 0.02) 100%);
     color: #fff;
     border: none;
     border-radius: 8px;
