@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minecraft Skins • Dakon</title>
+    <meta name="description" content="Koleksi Skin Minecraft Dakon. Klik kartu skin untuk menyalin command /skin url secara instan.">
+    <meta property="og:title" content="Minecraft Skins • Dakon">
+    <meta name="theme-color" content="#5865F2">
+
+    <!-- Stylesheets matching index.html -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="upload.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Immersive Background Elements (Identical to index.html) -->
+    <div id="particles-js"></div>
+    <div class="mesh-bg"></div>
+    <div class="blob-bg blob-1"></div>
+    <div class="blob-bg blob-2"></div>
+
+    <main class="container">
+        <div class="profile-card">
+            <div class="bento-grid">
+
+                <!-- Navigation & Hero Bento Card -->
+                <div class="bento-glass hero-card skin-hero-card">
+                    <div class="avatar-wrapper flex-shrink-0 skin-avatar-wrapper">
+                        <img src="upload/xpaann Merah.png" alt="Skin Avatar" id="skin-hero-avatar" class="skin-pixel-avatar">
+                        <div class="status-badge" title="Minecraft Ready">
+                            <div class="status-dot"></div>
+                        </div>
+                    </div>
+
+                    <div class="content flex-grow t-left">
+                        <div class="hero-top-row">
+                            <a href="index.html" class="bento-nav-btn" title="Kembali ke halaman utama">
+                                <i class="fas fa-arrow-left"></i>
+                                <span>Kembali ke Home</span>
+                            </a>
+                            <div class="badge-greeting">
+                                <span class="greeting-text" id="skin-count-badge">
+                                    <span class="status-dot"></span> Memuat Skin...
+                                </span>
+                            </div>
+                        </div>
+
+                        <h1 class="username">Skin Gallery <i class="fas fa-cube verified-icon" style="color: #4caf50;"></i></h1>
+                        <p class="tagline">SkinsRestorer Command Generator <span class="typing-text">/skin url</span></p>
+                        <p class="bio-description">
+                            Koleksi skin Minecraft yang tersimpan di repositori Dakon. Klik pada kartu skin untuk otomatis menyalin command <code>/skin url "..."</code> siap pakai di server SkinsRestorer.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Minecraft Server Usage Guide Bento Card -->
+                <div class="bento-glass skin-guide-card">
+                    <div class="guide-header">
+                        <div class="guide-icon-wrapper">
+                            <i class="fas fa-terminal"></i>
+                        </div>
+                        <div class="guide-intro">
+                            <h3>Cara Pasang di Minecraft Server</h3>
+                            <p>Kompatibel dengan plugin SkinsRestorer di server publik maupun private.</p>
+                        </div>
+                    </div>
+
+                    <div class="guide-steps-grid">
+                        <div class="guide-step-item">
+                            <div class="step-num">1</div>
+                            <div class="step-text">
+                                <strong>Klik Kartu Skin</strong>
+                                <span>Command Minecraft langsung tersalin ke clipboard.</span>
+                            </div>
+                        </div>
+                        <div class="guide-step-item">
+                            <div class="step-num">2</div>
+                            <div class="step-text">
+                                <strong>Buka Chat Game</strong>
+                                <span>Masuk ke server Minecraft, lalu tekan tombol <code>T</code>.</span>
+                            </div>
+                        </div>
+                        <div class="guide-step-item">
+                            <div class="step-num">3</div>
+                            <div class="step-text">
+                                <strong>Paste & Enter</strong>
+                                <span>Tekan <code>Ctrl + V</code> untuk paste, lalu tekan <code>Enter</code>.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toolbar Bento Card (Search & Controls) -->
+                <div class="bento-glass skin-toolbar-card">
+                    <div class="search-wrap">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="skin-search" class="skin-search-input" placeholder="Cari skin berdasarkan nama..." autocomplete="off">
+                    </div>
+
+                    <div class="toolbar-actions">
+                        <div class="source-select-group">
+                            <label for="source-mode-select"><i class="fas fa-globe"></i> Format:</label>
+                            <select id="source-mode-select" class="skin-select">
+                                <option value="github_raw">GitHub Raw (Server Publik)</option>
+                                <option value="hosted">Website Domain</option>
+                            </select>
+                        </div>
+
+                        <button class="skin-btn-primary" id="btn-open-upload">
+                            <i class="fas fa-cloud-arrow-up"></i>
+                            <span>Uji / Tambah Skin</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Skin Gallery Grid Container -->
+                <div class="skin-gallery-container" id="skin-gallery-container">
+                    <div class="skin-cards-grid" id="skin-grid">
+                        <!-- Populated dynamically via upload.js -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div class="bento-glass gallery-empty-card" id="gallery-empty" style="display: none;">
+                        <div class="empty-icon-wrap">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                        <h3>Tidak Ada Skin Ditemukan</h3>
+                        <p>Coba gunakan kata kunci pencarian lain atau upload file skin baru.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Footer (Identical to index.html) -->
+            <footer class="footer">
+                <p>Di gae nganggo <i class="fas fa-heart heart"></i> karo Dakon</p>
+            </footer>
+        </div>
+    </main>
+
+    <!-- Modal: Skin Inspector & Details -->
+    <div class="bento-modal-overlay" id="skin-modal" role="dialog" aria-modal="true" aria-labelledby="modal-skin-title">
+        <div class="bento-modal-dialog">
+            <div class="bento-modal-header">
+                <div class="modal-title-info">
+                    <div class="badge-greeting"><span class="greeting-text">Skin Details</span></div>
+                    <h3 id="modal-skin-title" class="modal-title">xpaann Merah</h3>
+                    <p id="modal-skin-file" class="modal-sub">xpaann Merah.png</p>
+                </div>
+                <button class="bento-modal-close" id="btn-close-modal" aria-label="Tutup">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="bento-modal-body">
+                <!-- Dual Preview Cards -->
+                <div class="modal-visual-grid">
+                    <div class="modal-char-preview-box">
+                        <span class="preview-label">Model Karakter 2D</span>
+                        <div class="char-canvas-wrap">
+                            <canvas id="modal-char-canvas" style="width: 80px; height: 160px; image-rendering: pixelated;"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="modal-char-preview-box">
+                        <span class="preview-label">Tekstur Skin Asli</span>
+                        <div class="char-canvas-wrap texture-wrap">
+                            <img id="modal-texture-img" class="modal-texture-img" src="" alt="Texture">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Minecraft Command Code Box -->
+                <div class="modal-cmd-container">
+                    <div class="modal-cmd-header">
+                        <span><i class="fas fa-code"></i> Command Minecraft SkinsRestorer:</span>
+                        <span class="cmd-tip">Siap di-paste ke chat in-game</span>
+                    </div>
+                    <div class="modal-cmd-box" id="modal-cmd-text">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="modal-button-row">
+                    <button class="skin-btn-primary flex-grow" id="btn-modal-copy-cmd">
+                        <i class="fas fa-copy"></i>
+                        <span>Salin Command</span>
+                    </button>
+                    <button class="skin-btn-secondary" id="btn-modal-copy-url" title="Salin URL Gambar Saja">
+                        <i class="fas fa-link"></i>
+                        <span>Salin URL</span>
+                    </button>
+                    <button class="skin-btn-secondary" id="btn-modal-download" title="Unduh file PNG skin">
+                        <i class="fas fa-download"></i>
+                        <span>Unduh PNG</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Upload / Test Local Skin -->
+    <div class="bento-modal-overlay" id="upload-modal" role="dialog" aria-modal="true">
+        <div class="bento-modal-dialog">
+            <div class="bento-modal-header">
+                <div class="modal-title-info">
+                    <div class="badge-greeting"><span class="greeting-text">Skin Uploader</span></div>
+                    <h3 class="modal-title">Uji & Tambah Skin Baru</h3>
+                    <p class="modal-sub">Format yang didukung: PNG Minecraft (64x64 atau 64x32)</p>
+                </div>
+                <button class="bento-modal-close" id="btn-close-upload" aria-label="Tutup">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="bento-modal-body">
+                <div class="bento-dropzone" id="dropzone">
+                    <div class="dropzone-icon-circle">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h4>Seret & Lepas file PNG skin ke sini</h4>
+                    <p>atau klik area ini untuk memilih file dari komputer</p>
+                    <input type="file" id="skin-file-input" accept="image/png" style="display: none;">
+                </div>
+
+                <div class="upload-tip-box">
+                    <i class="fas fa-info-circle tip-icon"></i>
+                    <div class="tip-content">
+                        <strong>Tips Penyimpanan Permanen:</strong>
+                        <p>Skin yang diuji di sini tersimpan di browser lokal. Untuk menambahkan skin secara permanen ke galeri publik, cukup letakkan file <code>.png</code> di folder <code>upload/</code> di repositori ini.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (Identical to index.html) -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-msg">Copied!</span>
+    </div>
+
+    <!-- Scripts matching index.html -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <script src="upload.js"></script>
+</body>
+
+</html>
