@@ -8,12 +8,17 @@
 // ==========================================
 const GITHUB_REPO = "anfdlh/Bio-Dakon";
 const GITHUB_BRANCH = "main";
+
+// Baseline skin list (Guarantees all 8 skins work offline / file:/// protocol)
 const DEFAULT_SKIN_LIST = [
-    {
-        file: "xpaann Merah.png",
-        name: "xpaann Merah",
-        category: "Custom Skin"
-    }
+    { file: "Dakon Ireng.png", name: "Dakon Ireng", category: "Custom Skin" },
+    { file: "Dakon biru.png", name: "Dakon biru", category: "Custom Skin" },
+    { file: "skin.png", name: "skin", category: "Custom Skin" },
+    { file: "xpaann Merah.png", name: "xpaann Merah", category: "Custom Skin" },
+    { file: "xpaann blue.png", name: "xpaann blue", category: "Custom Skin" },
+    { file: "xpaann ireng sma.png", name: "xpaann ireng sma", category: "Custom Skin" },
+    { file: "xpaann sma.png", name: "xpaann sma", category: "Custom Skin" },
+    { file: "xpaann.png", name: "xpaann", category: "Custom Skin" }
 ];
 
 // State
@@ -191,39 +196,81 @@ function renderMinecraftSkin(imageElement, canvas) {
 }
 
 // ==========================================
-// LOAD SKINS
+// LOAD SKINS (Multi-tier: Defaults + JSON + GitHub Auto-Discovery)
 // ==========================================
 async function loadSkins() {
-    let skins = [];
+    const skinMap = new Map();
 
+    // 1. Seed baseline default skins (Offline / file:/// ready)
+    DEFAULT_SKIN_LIST.forEach(item => {
+        skinMap.set(item.file.toLowerCase(), {
+            file: item.file,
+            name: item.name || item.file.replace(/\.[^/.]+$/, ""),
+            category: item.category || "Custom Skin"
+        });
+    });
+
+    // 2. Fetch local skins.json (When hosted on web / localhost / GitHub Pages)
     try {
-        const res = await fetch('upload/skins.json');
+        const res = await fetch('upload/skins.json?v=' + Date.now());
         if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-                skins = data.map(item => {
-                    if (typeof item === 'string') {
-                        return { file: item, name: item.replace(/\.[^/.]+$/, "") };
+                data.forEach(item => {
+                    const file = typeof item === 'string' ? item : item.file;
+                    const name = typeof item === 'string' ? item.replace(/\.[^/.]+$/, "") : (item.name || item.file.replace(/\.[^/.]+$/, ""));
+                    if (file) {
+                        skinMap.set(file.toLowerCase(), {
+                            file: file,
+                            name: name,
+                            category: (typeof item === 'object' && item.category) ? item.category : "Custom Skin"
+                        });
                     }
-                    return item;
                 });
             }
         }
-    } catch (_) {}
-
-    if (!skins || skins.length === 0) {
-        skins = [...DEFAULT_SKIN_LIST];
+    } catch (_) {
+        // Silently fall back if running under file:// without local server
     }
 
-    // Include any saved custom skins from localStorage
+    // 3. GitHub API Auto-Discovery
+    // Automatically detects any new .png files pushed to GitHub's upload/ folder!
+    try {
+        const ghRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/upload`);
+        if (ghRes.ok) {
+            const ghFiles = await ghRes.json();
+            if (Array.isArray(ghFiles)) {
+                ghFiles.forEach(fileObj => {
+                    if (fileObj.name && fileObj.name.toLowerCase().endsWith('.png')) {
+                        const key = fileObj.name.toLowerCase();
+                        if (!skinMap.has(key)) {
+                            skinMap.set(key, {
+                                file: fileObj.name,
+                                name: fileObj.name.replace(/\.[^/.]+$/, ""),
+                                category: "Custom Skin"
+                            });
+                        }
+                    }
+                });
+            }
+        }
+    } catch (_) {
+        // Silently skip if offline or rate-limited
+    }
+
+    // 4. Include custom uploaded skins saved in browser localStorage
     try {
         const localSkins = JSON.parse(localStorage.getItem('dakon_custom_skins') || '[]');
         if (Array.isArray(localSkins)) {
-            skins = [...skins, ...localSkins];
+            localSkins.forEach(item => {
+                if (item && item.file) {
+                    skinMap.set('custom_' + item.file.toLowerCase(), item);
+                }
+            });
         }
     } catch (_) {}
 
-    loadedSkins = skins;
+    loadedSkins = Array.from(skinMap.values());
     renderGallery(loadedSkins);
 }
 
@@ -281,7 +328,7 @@ function createSkinCard(skin, index) {
             <canvas class="skin-char-canvas" id="canvas-${index}" style="width: 72px; height: 144px;"></canvas>
             
             <div class="skin-texture-thumbnail" title="Tekstur PNG Asli">
-                <img src="${localSrc}" alt="${skinName} Texture">
+                <img src="${localSrc}" alt="${skinName} Texture" id="thumb-${index}">
             </div>
 
             <div class="click-hint-overlay">
@@ -317,9 +364,12 @@ function createSkinCard(skin, index) {
         </div>
     `;
 
-    // Load skin image & render to 2D Canvas
+    // Load skin image & render to 2D Canvas with fallback
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (localSrc.startsWith('http') && !localSrc.startsWith(window.location.origin)) {
+        img.crossOrigin = "anonymous";
+    }
+
     img.onload = () => {
         const canvas = card.querySelector(`#canvas-${index}`);
         renderMinecraftSkin(img, canvas);
@@ -328,6 +378,18 @@ function createSkinCard(skin, index) {
             dimEl.textContent = `${img.naturalWidth}x${img.naturalHeight} PNG`;
         }
     };
+
+    img.onerror = () => {
+        // Fallback to GitHub raw URL if local file path fails
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/upload/${encodeURIComponent(skin.file)}`;
+        if (img.src !== rawUrl) {
+            img.crossOrigin = "anonymous";
+            img.src = rawUrl;
+            const thumb = card.querySelector(`#thumb-${index}`);
+            if (thumb) thumb.src = rawUrl;
+        }
+    };
+
     img.src = localSrc;
 
     // EVENT LISTENERS:
@@ -401,12 +463,19 @@ function openSkinModal(skin, preloadedImg) {
     }
 
     if (modalCanvas) {
-        if (preloadedImg && preloadedImg.complete) {
+        if (preloadedImg && preloadedImg.complete && preloadedImg.naturalWidth > 0) {
             renderMinecraftSkin(preloadedImg, modalCanvas);
         } else {
             const tempImg = new Image();
-            tempImg.crossOrigin = "anonymous";
+            if (localSrc.startsWith('http') && !localSrc.startsWith(window.location.origin)) {
+                tempImg.crossOrigin = "anonymous";
+            }
             tempImg.onload = () => renderMinecraftSkin(tempImg, modalCanvas);
+            tempImg.onerror = () => {
+                const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/upload/${encodeURIComponent(skin.file)}`;
+                tempImg.crossOrigin = "anonymous";
+                tempImg.src = rawUrl;
+            };
             tempImg.src = localSrc;
         }
     }
@@ -650,7 +719,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const cmd = generateSkinCommand(selectedSkin);
             copyToClipboard(cmd, `Command tersalin: /skin url "..."`);
             btnModalCopyCmd.classList.add('copied');
-            btnModalCopyCmd.innerHTML = `<i class="fas fa-check"></i> <span>Tersalin!</span>`;
+            btnModalCopyCmd.innerHTML = `<i class="fas fa-check"></i> <span>Command Tersalin!</span>`;
             setTimeout(() => {
                 btnModalCopyCmd.classList.remove('copied');
                 btnModalCopyCmd.innerHTML = `<i class="fas fa-copy"></i> <span>Salin Command</span>`;
