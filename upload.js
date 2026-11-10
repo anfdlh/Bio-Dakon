@@ -11,9 +11,7 @@ const GITHUB_BRANCH = "main";
 
 // Baseline skin list (Guarantees all 8 skins work offline / file:/// protocol)
 const DEFAULT_SKIN_LIST = [
-    { file: "Dakon Ireng.png", name: "Dakon Ireng", category: "Custom Skin" },
     { file: "Dakon biru.png", name: "Dakon biru", category: "Custom Skin" },
-    { file: "skin.png", name: "skin", category: "Custom Skin" },
     { file: "xpaann Merah.png", name: "xpaann Merah", category: "Custom Skin" },
     { file: "xpaann blue.png", name: "xpaann blue", category: "Custom Skin" },
     { file: "xpaann ireng sma.png", name: "xpaann ireng sma", category: "Custom Skin" },
