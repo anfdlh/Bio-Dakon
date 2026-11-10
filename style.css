@@ -16,6 +16,7 @@
     --color-roblox: #E33935;
     --color-xbox: #107C10;
     --color-steam: #106f7c;
+    --color-minecraft: #4caf50;
 }
 
 * {
@@ -710,6 +711,32 @@ body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius
 .xbox-theme:hover { border-color: rgba(16, 124, 16, 0.5); box-shadow: 0 10px 30px rgba(16, 124, 16, 0.2); }
 .steam-theme:hover { border-color: rgba(16, 111, 124, 0.5); box-shadow: 0 10px 30px rgba(16, 111, 124, 0.2); }
 
+.minecraft-theme {
+    grid-column: span 4;
+    flex-direction: row;
+    align-items: center;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.12) 0%, rgba(76, 175, 80, 0.02) 100%);
+    border-color: rgba(76, 175, 80, 0.25);
+    min-height: auto;
+    padding: 22px 28px;
+}
+.minecraft-theme:hover {
+    border-color: rgba(76, 175, 80, 0.6);
+    box-shadow: 0 10px 30px rgba(76, 175, 80, 0.2);
+}
+.minecraft-theme .social-bento-icon {
+    color: var(--color-minecraft);
+    margin-bottom: 0;
+    margin-right: 20px;
+}
+.minecraft-theme:hover .social-bento-icon {
+    background: rgba(76, 175, 80, 0.18);
+}
+.minecraft-theme .social-bento-text {
+    margin-top: 0;
+}
+
+
 .social-bento-icon {
     width: 48px;
     height: 48px;
@@ -902,14 +929,14 @@ body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius
 
 @media (max-width: 900px) {
     .bento-grid { grid-template-columns: repeat(2, 1fr); }
-    .hero-card, .music-widget, .lanyard-widget, .guestbook-widget { grid-column: span 2; }
+    .hero-card, .music-widget, .lanyard-widget, .guestbook-widget, .minecraft-theme { grid-column: span 2; }
     .discord-theme, .insta-theme { grid-column: span 1; }
 }
 
 @media (max-width: 650px) {
     .container { padding: 30px 15px; }
     .bento-grid { grid-template-columns: 1fr; gap: 15px; }
-    .hero-card, .music-widget, .social-bento, .discord-theme, .insta-theme, .lanyard-widget, .guestbook-widget { grid-column: span 1; padding: 20px; }
+    .hero-card, .music-widget, .social-bento, .discord-theme, .insta-theme, .lanyard-widget, .guestbook-widget, .minecraft-theme { grid-column: span 1; padding: 20px; }
     .social-bento.lanyard-widget { flex-direction: column-reverse; align-items: stretch; justify-content: flex-start; gap: 20px; }
     .lanyard-activities-container { width: 100%; }
     .social-bento.lanyard-widget .lanyard-header { flex-direction: row; align-items: center; align-self: flex-end; }
