@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Galeri Skin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Nunito:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #e9ece4;
+    --surface: #fbfcf8;
+    --ink: #22281f;
+    --muted: #66705f;
+    --moss: #3f7d3a;
+    --moss-dark: #2c5a29;
+    --line: #c9d0bf;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1e17;
+      --surface: #242a20;
+      --ink: #e8ede0;
+      --muted: #9aa58f;
+      --moss: #6fb768;
+      --moss-dark: #8fd488;
+      --line: #394233;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Nunito', system-ui, sans-serif;
+    line-height: 1.5;
+  }
+  header { padding: 56px 24px 24px; max-width: 1100px; margin: 0 auto; }
+  h1 {
+    font-family: 'Silkscreen', monospace;
+    font-size: clamp(28px, 6vw, 52px);
+    margin: 0 0 8px;
+    letter-spacing: .5px;
+  }
+  header p { margin: 0; color: var(--muted); max-width: 52ch; }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px 24px 64px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--surface);
+    border: 2px solid var(--line);
+    padding: 12px;
+    cursor: pointer;
+    text-align: center;
+    font: inherit;
+    color: inherit;
+  }
+  .card:hover { border-color: var(--moss); }
+  .card:focus-visible { outline: 3px solid var(--moss); outline-offset: 2px; }
+  .card img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: contain;
+    image-rendering: pixelated;
+    display: block;
+    background: var(--bg);
+  }
+  .card span {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .msg {
+    grid-column: 1 / -1;
+    padding: 32px;
+    border: 2px dashed var(--line);
+    color: var(--muted);
+  }
+
+  dialog {
+    border: 2px solid var(--moss);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 24px;
+    width: min(560px, calc(100vw - 32px));
+  }
+  dialog::backdrop { background: rgba(10, 14, 8, .6); }
+  dialog img {
+    width: 128px; height: 128px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    background: var(--bg);
+    display: block;
+    margin: 0 auto 16px;
+  }
+  dialog h2 { font-family: 'Silkscreen', monospace; font-size: 18px; margin: 0 0 12px; text-align: center; }
+  .cmd {
+    width: 100%;
+    font: 14px/1.4 ui-monospace, Consolas, monospace;
+    padding: 12px;
+    border: 2px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    resize: none;
+    word-break: break-all;
+  }
+  .row { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+  button.btn {
+    font: 600 15px 'Nunito', sans-serif;
+    padding: 10px 18px;
+    border: 2px solid var(--moss);
+    background: var(--moss);
+    color: #fff;
+    cursor: pointer;
+  }
+  button.btn:hover { background: var(--moss-dark); border-color: var(--moss-dark); }
+  button.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+  button.btn.ghost:hover { border-color: var(--moss); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Galeri Skin</h1>
+  <p>Klik gambar untuk mendapatkan perintah <code>/skin url</code> lengkap dengan link gambarnya, lalu salin dan tempel di game.</p>
+</header>
+
+<main id="grid">
+  <div class="msg">Memuat gambar...</div>
+</main>
+
+<dialog id="dlg">
+  <img id="dlgImg" alt="">
+  <h2 id="dlgName"></h2>
+  <textarea id="cmd" class="cmd" rows="3" readonly></textarea>
+  <div class="row">
+    <button class="btn ghost" type="button" id="closeBtn">Tutup</button>
+    <button class="btn" type="button" id="copyBtn">Salin perintah</button>
+  </div>
+</dialog>
+
+<script>
+  // ====== PENGATURAN ======
+  const FOLDER = 'upload';
+
+  // Biasanya TIDAK perlu diisi: di GitHub Pages user & repo terdeteksi otomatis
+  // dari alamat website (user.github.io/repo). Isi hanya jika perlu.
+  const GH_USER   = '';      // contoh: 'budi'
+  const GH_REPO   = '';      // contoh: 'skin-gallery'
+  const GH_BRANCH = '';      // kosongkan = branch default repo
+
+  // Cadangan: dipakai kalau auto-deteksi gagal (mis. dibuka lokal / domain sendiri).
+  // Tulis nama file persis seperti di folder upload.
+  const MANUAL = [
+    // 'steve.png',
+    // 'alex.png',
+  ];
+  // ========================
+
+  const IMG_EXT = /\.(png|jpe?g|gif|webp)$/i;
+  const grid = document.getElementById('grid');
+  const dlg = document.getElementById('dlg');
+  const cmd = document.getElementById('cmd');
+  const copyBtn = document.getElementById('copyBtn');
+
+  // Alamat dasar website ini (folder tempat index.html berada), diakhiri "/"
+  const BASE = new URL('./', location.href).href;
+
+  function detectRepo() {
+    if (GH_USER && GH_REPO) return { user: GH_USER, repo: GH_REPO };
+    const host = location.hostname;
+    if (host.endsWith('.github.io')) {
+      const user = host.split('.')[0];
+      const first = location.pathname.split('/')[1];
+      const repo = first ? first : host; // user.github.io tanpa nama repo
+      return { user, repo };
+    }
+    return null;
+  }
+
+  async function listFromGitHub() {
+    const info = detectRepo();
+    if (!info) return null;
+    let api = `https://api.github.com/repos/${info.user}/${info.repo}/contents/${FOLDER}`;
+    if (GH_BRANCH) api += `?ref=${encodeURIComponent(GH_BRANCH)}`;
+    const res = await fetch(api);
+    if (!res.ok) throw new Error('GitHub API ' + res.status);
+    const data = await res.json();
+    return data.filter(f => f.type === 'file' && IMG_EXT.test(f.name)).map(f => f.name);
+  }
+
+  function render(names) {
+    names.sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }));
+    grid.innerHTML = '';
+    if (!names.length) {
+      grid.innerHTML = '<div class="msg">Belum ada gambar. Upload file gambar (png, jpg, gif, webp) ke folder <b>' + FOLDER + '/</b> di repo GitHub kamu.</div>';
+      return;
+    }
+    names.forEach(name => {
+      const url = BASE + FOLDER + '/' + encodeURIComponent(name);
+      const label = name.replace(/\.[^.]+$/, '');
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'card';
+
+      const img = document.createElement('img');
+      img.src = url;
+      img.alt = label;
+      img.loading = 'lazy';
+
+      const span = document.createElement('span');
+      span.textContent = label;
+
+      btn.append(img, span);
+      btn.addEventListener('click', () => {
+        document.getElementById('dlgImg').src = url;
+        document.getElementById('dlgName').textContent = label;
+        cmd.value = '/skin url "' + url + '"';
+        copyBtn.textContent = 'Salin perintah';
+        dlg.showModal();
+      });
+      grid.appendChild(btn);
+    });
+  }
+
+  async function init() {
+    try {
+      const names = await listFromGitHub();
+      if (names) return render(names);
+    } catch (e) {
+      console.warn('Gagal ambil daftar dari GitHub, pakai daftar manual.', e);
+    }
+    if (MANUAL.length) return render([...MANUAL]);
+    grid.innerHTML = '<div class="msg">Daftar gambar tidak bisa dimuat otomatis. Isi array <b>MANUAL</b> di index.html dengan nama file gambar, atau pastikan halaman dibuka lewat GitHub Pages.</div>';
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(cmd.value);
+    } catch (e) {
+      cmd.select();
+      document.execCommand('copy');
+    }
+    copyBtn.textContent = 'Tersalin';
+  });
+  document.getElementById('closeBtn').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+  init();
+</script>
+</body>
+</html>
