@@ -149,6 +149,7 @@
 </dialog>
 
 <script>
+(function () {
   // ====== PENGATURAN ======
   const FOLDER = 'upload';
 
@@ -174,6 +175,7 @@
 
   // Alamat dasar website ini (folder tempat index.html berada), diakhiri "/"
   const BASE = new URL('./', location.href).href;
+  let lastApi = '';
 
   function detectRepo() {
     if (GH_USER && GH_REPO) return { user: GH_USER, repo: GH_REPO };
@@ -192,6 +194,7 @@
     if (!info) return null;
     let api = `https://api.github.com/repos/${info.user}/${info.repo}/contents/${FOLDER}`;
     if (GH_BRANCH) api += `?ref=${encodeURIComponent(GH_BRANCH)}`;
+    lastApi = api;
     const res = await fetch(api);
     if (!res.ok) throw new Error('GitHub API ' + res.status);
     const data = await res.json();
@@ -217,6 +220,7 @@
       img.src = url;
       img.alt = label;
       img.loading = 'lazy';
+      img.onerror = () => { img.alt = 'Gagal memuat ' + name; img.style.fontSize = '11px'; };
 
       const span = document.createElement('span');
       span.textContent = label;
@@ -234,14 +238,28 @@
   }
 
   async function init() {
+    let errInfo = '';
     try {
       const names = await listFromGitHub();
       if (names) return render(names);
     } catch (e) {
-      console.warn('Gagal ambil daftar dari GitHub, pakai daftar manual.', e);
+      console.warn('Gagal ambil daftar dari GitHub.', e);
+      errInfo = e.message;
     }
     if (MANUAL.length) return render([...MANUAL]);
-    grid.innerHTML = '<div class="msg">Daftar gambar tidak bisa dimuat otomatis. Isi array <b>MANUAL</b> di index.html dengan nama file gambar, atau pastikan halaman dibuka lewat GitHub Pages.</div>';
+    const box = document.createElement('div');
+    box.className = 'msg';
+    box.innerHTML = 'Daftar gambar tidak bisa dimuat otomatis.<br><br>' +
+      'Alamat halaman: <code></code><br>' +
+      'API yang dicoba: <code></code><br>' +
+      'Error: <code></code><br><br>' +
+      'Isi <b>GH_USER</b> dan <b>GH_REPO</b> di bagian atas script, atau isi array <b>MANUAL</b> dengan nama file gambar.';
+    const codes = box.querySelectorAll('code');
+    codes[0].textContent = location.href;
+    codes[1].textContent = lastApi || '(tidak terdeteksi: bukan alamat github.io)';
+    codes[2].textContent = errInfo || 'tidak ada';
+    grid.innerHTML = '';
+    grid.appendChild(box);
   }
 
   copyBtn.addEventListener('click', async () => {
@@ -257,6 +275,7 @@
   dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
 
   init();
+})();
 </script>
 </body>
 </html>
