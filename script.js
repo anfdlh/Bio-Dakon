@@ -1,684 +1,792 @@
-document.addEventListener('DOMContentLoaded', () => {
-    particlesJS('particles-js', {
-        "particles": {
-            "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
-            "color": { "value": "#ffffff" },
-            "shape": { "type": "circle" },
-            "opacity": {
-                "value": 0.5,
-                "random": true,
-                "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false }
-            },
-            "size": {
-                "value": 3,
-                "random": true,
-                "anim": { "enable": false, "speed": 40, "size_min": 0.1, "sync": false }
-            },
-            "line_linked": {
-                "enable": true,
-                "distance": 150,
-                "color": "#7289da",
-                "opacity": 0.2,
-                "width": 1
-            },
-            "move": {
-                "enable": true,
-                "speed": 2,
-                "direction": "none",
-                "random": false,
-                "straight": false,
-                "out_mode": "out",
-                "bounce": false,
-                "attract": { "enable": false, "rotateX": 600, "rotateY": 1200 }
-            }
-        },
-        "interactivity": {
-            "detect_on": "canvas",
-            "events": {
-                "onhover": { "enable": true, "mode": "grab" },
-                "onclick": { "enable": true, "mode": "push" },
-                "resize": true
-            },
-            "modes": {
-                "grab": { "distance": 140, "line_linked": { "opacity": 1 } },
-                "bubble": { "distance": 400, "size": 40, "duration": 2, "opacity": 8, "speed": 3 },
-                "repulse": { "distance": 200, "duration": 0.4 },
-                "push": { "particles_nb": 4 },
-                "remove": { "particles_nb": 2 }
-            }
-        },
-        "retina_detect": true
-    });
+/**
+ * DAKON PERSONAL SPACE — SKIN GALLERY & COMMAND GENERATOR
+ * Bento Glassmorphism Architecture matching index.html
+ */
 
-    // 2. Entrance Animation
-    const card = document.querySelector('.profile-card');
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(30px) rotateX(10deg)';
+// ==========================================
+// CONFIGURATION & DEFAULTS
+// ==========================================
+const GITHUB_REPO = "anfdlh/Bio-Dakon";
+const GITHUB_BRANCH = "main";
 
-    setTimeout(() => {
-        card.style.transition = 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        card.style.opacity = '1';
-        card.style.transform = 'translateY(0) rotateX(0)';
-    }, 100);
+// Baseline skin list (Guarantees all 8 skins work offline / file:/// protocol)
+const DEFAULT_SKIN_LIST = [
+    { file: "Dakon Ireng.png", name: "Dakon Ireng", category: "Custom Skin" },
+    { file: "Dakon biru.png", name: "Dakon biru", category: "Custom Skin" },
+    { file: "skin.png", name: "skin", category: "Custom Skin" },
+    { file: "xpaann Merah.png", name: "xpaann Merah", category: "Custom Skin" },
+    { file: "xpaann blue.png", name: "xpaann blue", category: "Custom Skin" },
+    { file: "xpaann ireng sma.png", name: "xpaann ireng sma", category: "Custom Skin" },
+    { file: "xpaann sma.png", name: "xpaann sma", category: "Custom Skin" },
+    { file: "xpaann.png", name: "xpaann", category: "Custom Skin" }
+];
 
-    // Initialize Tilt only on Desktop
-    if (window.innerWidth > 768) {
-        VanillaTilt.init(document.querySelectorAll(".bento-glass"), {
-            max: 5,
-            speed: 400,
-            glare: true,
-            "max-glare": 0.2
-        });
+// State
+let loadedSkins = [];
+let activeUrlMode = "github_raw"; // 'github_raw' | 'hosted'
+let selectedSkin = null;
+
+// ==========================================
+// TOAST NOTIFICATION (Identical to index.html)
+// ==========================================
+let toastTimer = null;
+function showToast(message, iconClass = 'fa-check-circle') {
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toast-msg') || document.getElementById('toast-text');
+    if (!toast || !toastMsg) return;
+
+    const icon = toast.querySelector('i');
+    if (icon) {
+        icon.className = `fas ${iconClass}`;
     }
 
-});
-
-// 3. Clipboard Functionality
-function copyDiscord(e) {
-    e.preventDefault();
-    const discordID = "anfdlhh";
-
-    navigator.clipboard.writeText(discordID).then(() => {
-        showToast(`Copied: ${discordID}`);
-    }).catch(() => {
-        // Fallback
-        const ta = document.createElement('textarea');
-        ta.value = discordID;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        showToast(`Copied: ${discordID}`);
-    });
-}
-
-function showToast(message) {
-    const toast = document.getElementById('toast');
-    const msg = document.getElementById('toast-msg');
-
-    msg.textContent = message;
+    toastMsg.textContent = message;
     toast.classList.add('visible');
 
-    setTimeout(() => {
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
         toast.classList.remove('visible');
     }, 3000);
 }
 
-// 4. Playlist Toggle Function
-function togglePlaylist() {
-    const playlist = document.getElementById('playlist');
-    const btn = document.querySelector('.toggle-btn');
-
-    if (playlist && btn) {
-        playlist.classList.toggle('open');
-        btn.classList.toggle('active');
+// ==========================================
+// CLIPBOARD COPY HELPER
+// ==========================================
+function copyToClipboard(text, successMsg = 'Tersalin!') {
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text)
+            .then(() => showToast(successMsg, 'fa-copy'))
+            .catch(() => fallbackCopy(text, successMsg));
+    } else {
+        fallbackCopy(text, successMsg);
     }
 }
 
-// 5. Load Songs from JS Data
-const songs = [
-    {
-        "title": "Stitches",
-        "artist": "Shawn Mendes",
-        "image": "https://i.scdn.co/image/ab67616d0000485175bd5306fb4669a15ee74eff",
-        "audioFile": "music/stitches.mp3"
-    },
-    {
-        "title": "Show Me Love",
-        "artist": "WizTheMc, bees & honey",
-        "image": "https://i.scdn.co/image/ab67616d00004851f67307349b14986af73d4fa0",
-        "audioFile": "music/show-me-love.mp3"
-    },
-    {
-        "title": "Heat Waves",
-        "artist": "Glass Animals",
-        "image": "https://i.scdn.co/image/ab67616d0000b2739e495fb707973f3390850eea",
-        "audioFile": "music/That s So True.mp3"
-    },
-    {
-        "title": "Blinding Lights",
-        "artist": "The Weeknd",
-        "image": "https://i.scdn.co/image/ab67616d0000b2738b52c6b9bc4e43d873869699",
-        "audioFile": "music/blinding-lights.mp3"
-    },
-    {
-        "title": "cardigan",
-        "artist": "Taylor Swift",
-        "image": "https://i.scdn.co/image/ab67616d0000485195f754318336a07e85ec59bc",
-        "audioFile": "music/cardigan.mp3"
-    },
-    {
-        "title": "Just For A Moment",
-        "artist": "Gryffin, Iselin",
-        "image": "https://i.scdn.co/image/ab67616d000048510e5311993a01fb2e7169f6a7",
-        "audioFile": "music/just-for-a-moment.mp3"
-    },
-    {
-        "title": "Team",
-        "artist": "Lorde",
-        "image": "https://i.scdn.co/image/ab67616d00004851187331e276c898d39764cc98",
-        "audioFile": "music/team.mp3"
-    },
-    {
-        "title": "No Lie",
-        "artist": "Sean Paul, Dua Lipa",
-        "image": "https://i.scdn.co/image/ab67616d000048512d564195ed3dd7b70d64862c",
-        "audioFile": "music/no-lie.mp3"
-    },
-    {
-        "title": "Two Birds",
-        "artist": "Regina Spektor",
-        "image": "https://i.scdn.co/image/ab67616d00004851c06f8d26d1620c4689f8d46a",
-        "audioFile": "music/two-birds.mp3"
-    },
-    {
-        "title": "Car's Outside",
-        "artist": "James Arthur",
-        "image": "https://i.scdn.co/image/ab67616d00004851f740f5f279648d0a1147e6a6",
-        "audioFile": "music/cars-outside.mp3"
+function fallbackCopy(text, successMsg) {
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        if (ok) {
+            showToast(successMsg, 'fa-copy');
+        } else {
+            prompt('Salin command berikut:', text);
+        }
+    } catch (_) {
+        prompt('Salin command berikut:', text);
     }
-];
+}
 
-// 6. Custom Audio Player Logic (HTML5 Audio)
-var audioPlayer = null;
-var isPlaying = false;
-var currentSongIndex = 0;
-var isShuffle = false;
-var updateInterval;
-
-// Initialize audio player when DOM loads
-document.addEventListener('DOMContentLoaded', () => {
-    audioPlayer = document.getElementById('audio-player');
-
-    if (audioPlayer) {
-        audioPlayer.addEventListener('play', () => {
-            isPlaying = true;
-            updatePlayPauseIcon();
-            startProgressLoop();
-        });
-
-        audioPlayer.addEventListener('pause', () => {
-            isPlaying = false;
-            updatePlayPauseIcon();
-            stopProgressLoop();
-        });
-
-        audioPlayer.addEventListener('ended', () => {
-            playNext();
-        });
-
-        audioPlayer.addEventListener('error', (e) => {
-            console.error('Audio error:', e);
-            alert('Error playing audio. Try another song.');
-        });
+// ==========================================
+// URL & COMMAND GENERATOR
+// ==========================================
+function getSkinImageUrl(skinItem) {
+    if (skinItem.customUrl) {
+        return skinItem.customUrl;
     }
-});
 
-function loadSongs() {
-    const playlistContainer = document.getElementById('playlist');
-    if (!playlistContainer) return;
-    playlistContainer.innerHTML = '';
+    const filename = skinItem.file;
+    const encodedFile = encodeURIComponent(filename);
 
-    songs.forEach((song, index) => {
-        const songItem = document.createElement('div');
-        songItem.className = 'song-item';
-        songItem.onclick = () => playSongAtIndex(index);
+    if (activeUrlMode === 'hosted') {
+        if (window.location.protocol.startsWith('http')) {
+            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+            return `${baseUrl}upload/${encodedFile}`;
+        }
+    }
 
-        songItem.innerHTML = `
-            <img src="${song.image}" alt="Art" class="song-img">
-            <div class="song-details">
-                <span class="song-title">${song.title}</span>
-                <span class="song-artist">${song.artist}</span>
-            </div>
-            <i class="fas fa-play" style="margin-left:auto; font-size: 0.8rem; opacity: 0.7;"></i>
-        `;
-        playlistContainer.appendChild(songItem);
+    // Default to GitHub Raw URL (globally reachable by Minecraft servers)
+    return `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/upload/${encodedFile}`;
+}
+
+function generateSkinCommand(skinItem) {
+    const imageUrl = getSkinImageUrl(skinItem);
+    return `/skin url "${imageUrl}"`;
+}
+
+// ==========================================
+// 2D MINECRAFT SKIN COMPOSITE RENDERER
+// Assembles 64x64 or 64x32 skin PNG into a 2D model
+// ==========================================
+function renderMinecraftSkin(imageElement, canvas) {
+    if (!canvas || !imageElement) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    canvas.width = 16;
+    canvas.height = 32;
+
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, 16, 32);
+
+    const isSkin = (imageElement.naturalWidth === 64 && (imageElement.naturalHeight === 64 || imageElement.naturalHeight === 32));
+
+    if (!isSkin) {
+        ctx.drawImage(imageElement, 0, 0, 16, 32);
+        return;
+    }
+
+    const hasOuterLayers = imageElement.naturalHeight === 64;
+
+    function drawPart(sx, sy, sw, sh, dx, dy, dw, dh) {
+        ctx.drawImage(imageElement, sx, sy, sw, sh, dx, dy, dw, dh);
+    }
+
+    // 1. HEAD (sx:8, sy:8, 8x8 -> dx:4, dy:0, 8x8)
+    drawPart(8, 8, 8, 8, 4, 0, 8, 8);
+
+    // 2. HEAD HELMET / HAT (Outer layer sx:40, sy:8, 8x8)
+    drawPart(40, 8, 8, 8, 4, 0, 8, 8);
+
+    // 3. TORSO (sx:20, sy:20, 8x12 -> dx:4, dy:8, 8x12)
+    drawPart(20, 20, 8, 12, 4, 8, 8, 12);
+
+    // 4. RIGHT ARM (Player right = screen left)
+    drawPart(44, 20, 4, 12, 0, 8, 4, 12);
+
+    // 5. LEFT ARM (Player left = screen right)
+    if (hasOuterLayers) {
+        drawPart(36, 52, 4, 12, 12, 8, 4, 12);
+    } else {
+        ctx.save();
+        ctx.translate(16, 0);
+        ctx.scale(-1, 1);
+        drawPart(44, 20, 4, 12, 0, 8, 4, 12);
+        ctx.restore();
+    }
+
+    // 6. RIGHT LEG (dx:4, dy:20, 4x12)
+    drawPart(4, 20, 4, 12, 4, 20, 4, 12);
+
+    // 7. LEFT LEG (dx:8, dy:20, 4x12)
+    if (hasOuterLayers) {
+        drawPart(20, 52, 4, 12, 8, 20, 4, 12);
+    } else {
+        ctx.save();
+        ctx.translate(16, 0);
+        ctx.scale(-1, 1);
+        drawPart(4, 20, 4, 12, 4, 20, 4, 12);
+        ctx.restore();
+    }
+
+    // Outer layers for 64x64 skins
+    if (hasOuterLayers) {
+        // Jacket (Torso outer): sx:20, sy:36, 8x12
+        drawPart(20, 36, 8, 12, 4, 8, 8, 12);
+
+        // Right Arm outer: sx:44, sy:36, 4x12
+        drawPart(44, 36, 4, 12, 0, 8, 4, 12);
+
+        // Left Arm outer: sx:52, sy:52, 4x12
+        drawPart(52, 52, 4, 12, 12, 8, 4, 12);
+
+        // Right Leg outer: sx:4, sy:36, 4x12
+        drawPart(4, 36, 4, 12, 4, 20, 4, 12);
+
+        // Left Leg outer: sx:4, sy:52, 4x12
+        drawPart(4, 52, 4, 12, 8, 20, 4, 12);
+    }
+}
+
+// ==========================================
+// LOAD SKINS (Multi-tier: Defaults + JSON + GitHub Auto-Discovery)
+// ==========================================
+async function loadSkins() {
+    const skinMap = new Map();
+
+    // 1. Seed baseline default skins (Offline / file:/// ready)
+    DEFAULT_SKIN_LIST.forEach(item => {
+        skinMap.set(item.file.toLowerCase(), {
+            file: item.file,
+            name: item.name || item.file.replace(/\.[^/.]+$/, ""),
+            category: item.category || "Custom Skin"
+        });
     });
 
-    // Add View All Button
-    const viewAll = document.createElement('a');
-    viewAll.href = 'https://open.spotify.com/playlist/5bfMG67zHHB52NyxcbTBxQ';
-    viewAll.target = "_blank";
-    viewAll.className = 'view-all-btn';
-    viewAll.innerHTML = 'View Full Playlist <i class="fas fa-external-link-alt"></i>';
-    playlistContainer.appendChild(viewAll);
-}
-
-function playSongAtIndex(index) {
-    currentSongIndex = index;
-    const song = songs[currentSongIndex];
-
-    // UI Update
-    document.getElementById('default-music-view').style.display = 'none';
-    document.getElementById('player-view').style.display = 'block';
-
-    document.getElementById('np-title').innerText = song.title;
-    document.getElementById('np-artist').innerText = song.artist;
-
-    if (audioPlayer) {
-        // Load local MP3 file
-        audioPlayer.src = song.audioFile;
-        audioPlayer.load();
-        audioPlayer.play().catch(e => {
-            console.error('Play error:', e);
-            // Fallback: show message to user
-            alert('Click the Play button to start the music');
-        });
-    }
-}
-
-function togglePlayPause() {
-    if (!audioPlayer) return;
-    if (isPlaying) {
-        audioPlayer.pause();
-    } else {
-        audioPlayer.play().catch(e => console.error('Play error:', e));
-    }
-}
-
-function updatePlayPauseIcon() {
-    const btn = document.getElementById('play-pause-btn');
-    if (isPlaying) {
-        btn.innerHTML = '<i class="fas fa-pause"></i>';
-    } else {
-        btn.innerHTML = '<i class="fas fa-play"></i>';
-    }
-}
-
-function playNext() {
-    let nextIndex;
-    if (isShuffle) {
-        nextIndex = Math.floor(Math.random() * songs.length);
-    } else {
-        nextIndex = (currentSongIndex + 1) % songs.length;
-    }
-    playSongAtIndex(nextIndex);
-}
-
-function playPrev() {
-    let prevIndex = (currentSongIndex - 1 + songs.length) % songs.length;
-    playSongAtIndex(prevIndex);
-}
-
-function toggleShuffle() {
-    isShuffle = !isShuffle;
-    const btn = document.getElementById('shuffle-btn');
-    if (isShuffle) {
-        btn.classList.add('active');
-    } else {
-        btn.classList.remove('active');
-    }
-}
-
-function closePlayer() {
-    if (audioPlayer) {
-        audioPlayer.pause();
-        audioPlayer.currentTime = 0;
-    }
-    document.getElementById('player-view').style.display = 'none';
-    document.getElementById('default-music-view').style.display = 'flex';
-}
-
-// Progress Bar
-function startProgressLoop() {
-    stopProgressLoop();
-    updateInterval = setInterval(() => {
-        if (!audioPlayer) return;
-        const duration = audioPlayer.duration;
-        const currentTime = audioPlayer.currentTime;
-        if (duration > 0) {
-            const percent = (currentTime / duration) * 100;
-            document.getElementById('progress-bar').style.width = percent + '%';
-        }
-    }, 1000);
-}
-
-function stopProgressLoop() {
-    if (updateInterval) clearInterval(updateInterval);
-}
-
-// 6. Dynamic Features (Greeting & Typing)
-function updateGreeting() {
-    const hour = new Date().getHours();
-    const greetingElement = document.getElementById('greeting');
-    let greeting = 'Welcome';
-
-    if (hour >= 5 && hour < 11) greeting = 'Sugeng Enjing';
-    else if (hour >= 11 && hour < 15) greeting = 'Sugeng Siang';
-    else if (hour >= 15 && hour < 19) greeting = 'Sugeng Sonten';
-    else greeting = 'Sugeng Dalu';
-
-    if (greetingElement) greetingElement.innerText = greeting;
-}
-
-const typingText = document.querySelector('.typing-text');
-const words = ["MANGAN", "TURU", "NGEGAME", "DOLAN"];
-let wordIndex = 0;
-let charIndex = 0;
-let isDeleting = false;
-
-function typeEffect() {
-    if (!typingText) return;
-
-    const currentWord = words[wordIndex];
-    if (isDeleting) {
-        typingText.innerText = currentWord.substring(0, charIndex--);
-    } else {
-        typingText.innerText = currentWord.substring(0, charIndex++);
-    }
-
-    let typeSpeed = isDeleting ? 100 : 200;
-
-    if (!isDeleting && charIndex === currentWord.length + 1) {
-        typeSpeed = 2000; // Pause at end
-        isDeleting = true;
-    } else if (isDeleting && charIndex === 0) {
-        isDeleting = false;
-        wordIndex = (wordIndex + 1) % words.length;
-        typeSpeed = 500;
-    }
-
-    setTimeout(typeEffect, typeSpeed);
-}
-
-// Initialize Dynamic Features
-loadSongs();
-updateGreeting();
-typeEffect();
-
-// 7. Lanyard Live Discord Presence Integration
-const LANYARD_USER_ID = "758184274330648597"; // IMPORTANT: Replace this with your 18-digit Discord ID
-const lanyardEndpoint = `https://api.lanyard.rest/v1/users/${LANYARD_USER_ID}`;
-let spotifyInterval = null;
-let activityInterval = null;
-
-function formatTime(ms) {
-    const totalSeconds = Math.floor(ms / 1000);
-    const m = Math.floor(totalSeconds / 60);
-    const s = Math.floor(totalSeconds % 60);
-    return `${m}:${s < 10 ? '0' : ''}${s}`;
-}
-
-function setupSpotifyProgress(start, end) {
-    if (spotifyInterval) clearInterval(spotifyInterval);
-
-    spotifyInterval = setInterval(() => {
-        const now = new Date().getTime();
-        const total = end - start;
-        const current = now - start;
-
-        let percent = (current / total) * 100;
-        if (percent > 100) percent = 100;
-
-        const bar = document.getElementById('spotify-bar');
-        const currentText = document.getElementById('spotify-current');
-        const totalText = document.getElementById('spotify-total');
-
-        if (bar) bar.style.width = `${percent}%`;
-        if (currentText) currentText.innerText = formatTime(current);
-        if (totalText) totalText.innerText = formatTime(total);
-
-        if (percent >= 100) clearInterval(spotifyInterval);
-    }, 1000);
-}
-
-function updateLanyardUI(d) {
+    // 2. Fetch local skins.json (When hosted on web / localhost / GitHub Pages)
     try {
-
-        const statusDot = document.getElementById('lanyard-status-dot');
-        const statusText = document.getElementById('lanyard-status-text');
-        const container = document.getElementById('lanyard-activities-container');
-
-        if (!statusDot || !d || !container) return;
-
-        // 1. Update Online Status Dot & Text
-        statusDot.className = `status-indicator ${d.discord_status}`;
-        statusText.innerText = d.discord_status.toUpperCase();
-
-        // 2. Fetch Multi-Activity
-        if (d.activities && d.activities.length > 0) {
-            let htmlStr = `<div style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-bolt" style="color: var(--color-discord);"></i> AKTIVITASE DAKON SAK IKI</div>`;
-            let spotifyData = null;
-            let activeTimers = [];
-
-            d.activities.forEach(activity => {
-                let iconHtml = '';
-                let smallIconHtml = '';
-                let progressHtml = '';
-                let timeHtml = '';
-                let title = activity.name;
-                let desc1 = activity.state ? `<p class="social-desc">${activity.state}</p>` : '';
-                let desc2 = activity.details ? `<p class="social-desc" style="font-size: 0.8rem; opacity: 0.8;">${activity.details}</p>` : '';
-
-                // Elapsed Time Logic
-                if (activity.id !== "spotify:1" && activity.timestamps && activity.timestamps.start) {
-                    const timerId = `timer-${activity.id}`;
-                    activeTimers.push({ id: timerId, start: activity.timestamps.start });
-                    timeHtml = `<p class="social-desc" style="font-size: 0.75rem; margin-top:4px; font-variant-numeric: tabular-nums; opacity: 0.9; color: var(--color-discord); font-weight: 600;"><i class="far fa-clock"></i> <span id="${timerId}">00:00</span> elapsed</p>`;
-                }
-
-                // Icon Handling for Spotify or Discord App Games
-                if (activity.id === "spotify:1" && d.spotify) {
-                    iconHtml = `<img src="${d.spotify.album_art_url}" class="lanyard-main-icon" alt="Spotify">`;
-                    spotifyData = d.spotify;
-                    title = d.spotify.song;
-                    desc1 = `<p class="social-desc">by ${d.spotify.artist}</p>`;
-                    desc2 = `<p class="social-desc" style="font-size: 0.8rem; opacity: 0.8;">on ${d.spotify.album}</p>`;
-
-                    progressHtml = `
-                        <div class="spotify-progress-wrapper">
-                            <div class="spotify-progress-container">
-                                <div class="spotify-progress-bar" id="spotify-bar"></div>
-                            </div>
-                            <div class="spotify-time">
-                                <span id="spotify-current">0:00</span>
-                                <span id="spotify-total">0:00</span>
-                            </div>
-                        </div>
-                    `;
-                } else if (activity.assets && activity.assets.large_image) {
-                    const imgId = activity.assets.large_image.replace('mp:', 'https://media.discordapp.net/');
-                    const imgUrl = imgId.startsWith('https') ? imgId : `https://cdn.discordapp.com/app-assets/${activity.application_id}/${imgId}.png`;
-                    iconHtml = `<img src="${imgUrl}" class="lanyard-main-icon" alt="${activity.name}">`;
-
-                    if (activity.assets.small_image) {
-                        const sImgId = activity.assets.small_image.replace('mp:', 'https://media.discordapp.net/');
-                        const sImgUrl = sImgId.startsWith('https') ? sImgId : `https://cdn.discordapp.com/app-assets/${activity.application_id}/${sImgId}.png`;
-                        smallIconHtml = `<img src="${sImgUrl}" class="lanyard-small-icon" alt="Badge" title="${activity.assets.small_text || ''}">`;
+        const res = await fetch('upload/skins.json?v=' + Date.now());
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                data.forEach(item => {
+                    const file = typeof item === 'string' ? item : item.file;
+                    const name = typeof item === 'string' ? item.replace(/\.[^/.]+$/, "") : (item.name || item.file.replace(/\.[^/.]+$/, ""));
+                    if (file) {
+                        skinMap.set(file.toLowerCase(), {
+                            file: file,
+                            name: name,
+                            category: (typeof item === 'object' && item.category) ? item.category : "Custom Skin"
+                        });
                     }
-                } else if (activity.application_id) {
-                    // Fallback to fetch native Discord game icon using Lanyard proxy
-                    const imgUrl = `https://dcdn.dstn.to/app-icons/${activity.application_id}`;
-                    iconHtml = `<img src="${imgUrl}" class="lanyard-main-icon" alt="${activity.name}">`;
-                } else {
-                    iconHtml = `<i class="fas fa-gamepad lanyard-main-icon" style="font-size: 1.8rem; color: #fff; background: rgba(0,0,0,0.5); display: flex; align-items:center; justify-content:center;"></i>`;
-                }
-
-                htmlStr += `
-                    <div class="lanyard-content">
-                        <div class="lanyard-icon-wrapper">
-                            ${iconHtml}
-                            ${smallIconHtml}
-                        </div>
-                        <div class="lanyard-info" style="width: 100%;">
-                            <h4 class="social-title" style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 2px;">${title}</h4>
-                            ${desc2}
-                            ${desc1}
-                            ${timeHtml}
-                            ${progressHtml}
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = htmlStr;
-
-            // Initialize progress if Spotify is in activity
-            if (spotifyData) {
-                setupSpotifyProgress(spotifyData.timestamps.start, spotifyData.timestamps.end);
-            } else {
-                if (spotifyInterval) clearInterval(spotifyInterval);
+                });
             }
-
-            // Initialize elapsed time loop
-            if (activityInterval) clearInterval(activityInterval);
-            if (activeTimers.length > 0) {
-                activityInterval = setInterval(() => {
-                    const now = new Date().getTime();
-                    activeTimers.forEach(t => {
-                        const el = document.getElementById(t.id);
-                        if (el && document.body.contains(el)) {
-                            const diff = now - t.start;
-                            const totalSeconds = Math.floor(diff / 1000);
-                            const hours = Math.floor(totalSeconds / 3600);
-                            const minutes = Math.floor((totalSeconds % 3600) / 60);
-                            const seconds = Math.floor(totalSeconds % 60);
-
-                            const sStr = seconds < 10 ? '0' + seconds : seconds;
-                            const mStr = minutes < 10 ? '0' + minutes : minutes;
-
-                            if (hours > 0) {
-                                const hStr = hours < 10 ? '0' + hours : hours;
-                                el.innerText = `${hStr}:${mStr}:${sStr}`;
-                            } else {
-                                el.innerText = `${mStr}:${sStr}`;
-                            }
-                        }
-                    });
-                }, 1000);
-            }
-
-        } else {
-            // No activity active
-            container.innerHTML = `
-                <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1.5px; display: flex; align-items: center; gap: 8px;"><i class="fas fa-bolt" style="color: var(--color-discord);"></i> AKTIVITASE DAKON SAK IKI</div>
-                <div class="lanyard-content">
-                    <div class="lanyard-icon-wrapper">
-                        <i class="fab fa-discord lanyard-main-icon" style="font-size: 2.2rem; color: var(--color-discord); display: flex; align-items:center; justify-content:center;"></i>
-                    </div>
-                    <div class="lanyard-info" style="width: 100%;">
-                        <h4 class="social-title" style="font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 4px;">Ga Ono Aktivitas</h4>
-                        <p class="social-desc">Seng tenang...</p>
-                    </div>
-                </div>
-            `;
-            if (spotifyInterval) clearInterval(spotifyInterval);
-            if (activityInterval) clearInterval(activityInterval);
         }
-    } catch (error) {
-        console.error("Aktivitas error:", error);
+    } catch (_) {
+        // Silently fall back if running under file:// without local server
     }
-}
 
-// Check if Placeholder and setup
-if (LANYARD_USER_ID === "YOUR_DISCORD_ID_HERE") {
-    const container = document.getElementById('lanyard-activities-container');
-    if (container) {
-        container.innerHTML = `
-            <div class="lanyard-content">
-                <div class="lanyard-info" style="width: 100%;">
-                    <h4 class="social-title">...</h4>
-                    <p class="social-desc">...</p>
-                </div>
-            </div>
-        `;
-    }
-} else {
-    function connectLanyard() {
-        const ws = new WebSocket('wss://api.lanyard.rest/socket');
-        let heartbeatInterval = null;
-
-        ws.onopen = () => {
-            ws.send(JSON.stringify({
-                op: 2,
-                d: { subscribe_to_id: LANYARD_USER_ID }
-            }));
-        };
-
-        ws.onmessage = (event) => {
-            const msg = JSON.parse(event.data);
-
-            if (msg.op === 1) { // Hello event, start heartbeat
-                heartbeatInterval = setInterval(() => {
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ op: 3 }));
+    // 3. GitHub API Auto-Discovery
+    // Automatically detects any new .png files pushed to GitHub's upload/ folder!
+    try {
+        const ghRes = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/upload`);
+        if (ghRes.ok) {
+            const ghFiles = await ghRes.json();
+            if (Array.isArray(ghFiles)) {
+                ghFiles.forEach(fileObj => {
+                    if (fileObj.name && fileObj.name.toLowerCase().endsWith('.png')) {
+                        const key = fileObj.name.toLowerCase();
+                        if (!skinMap.has(key)) {
+                            skinMap.set(key, {
+                                file: fileObj.name,
+                                name: fileObj.name.replace(/\.[^/.]+$/, ""),
+                                category: "Custom Skin"
+                            });
+                        }
                     }
-                }, msg.d.heartbeat_interval);
+                });
             }
-
-            if (msg.t === 'INIT_STATE' || msg.t === 'PRESENCE_UPDATE') {
-                updateLanyardUI(msg.d);
-            }
-        };
-
-        ws.onclose = () => {
-            if (heartbeatInterval) clearInterval(heartbeatInterval);
-            setTimeout(connectLanyard, 5000); // Auto reconnect
-        };
+        }
+    } catch (_) {
+        // Silently skip if offline or rate-limited
     }
 
-    connectLanyard();
+    // 4. Include custom uploaded skins saved in browser localStorage
+    try {
+        const localSkins = JSON.parse(localStorage.getItem('dakon_custom_skins') || '[]');
+        if (Array.isArray(localSkins)) {
+            localSkins.forEach(item => {
+                if (item && item.file) {
+                    skinMap.set('custom_' + item.file.toLowerCase(), item);
+                }
+            });
+        }
+    } catch (_) {}
+
+    loadedSkins = Array.from(skinMap.values());
+    renderGallery(loadedSkins);
 }
 
-// 8. Anonymous Guestbook Webhook
-const DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1454442109414146202/WjaEtveHw5wgHN3e6oo6Ex2K_tSP7lzpaPmSTWiijyA6y2O6Dspq1HoEWDTr6IHe6LmG";
+// ==========================================
+// RENDER GALLERY
+// ==========================================
+function renderGallery(skinsToRender) {
+    const grid = document.getElementById('skin-grid');
+    const emptyState = document.getElementById('gallery-empty');
+    const countBadge = document.getElementById('skin-count-badge');
 
-async function sendGuestbookMessage() {
-    const input = document.getElementById('guestbook-input');
-    const sendBtn = document.getElementById('guestbook-send-btn');
-    const statusMsg = document.getElementById('guestbook-status');
-    const message = input.value.trim();
+    if (countBadge) {
+        countBadge.innerHTML = `<span class="status-dot"></span> ${skinsToRender.length} Skin Tersedia`;
+    }
 
-    const showStatus = (text, color) => {
-        statusMsg.style.display = 'block';
-        statusMsg.style.color = color;
-        statusMsg.innerText = text;
-        setTimeout(() => { statusMsg.style.display = 'none'; }, 4000);
+    if (!grid) return;
+
+    if (skinsToRender.length === 0) {
+        grid.style.display = 'none';
+        if (emptyState) emptyState.style.display = 'flex';
+        return;
+    }
+
+    grid.style.display = 'grid';
+    if (emptyState) emptyState.style.display = 'none';
+
+    grid.innerHTML = '';
+
+    skinsToRender.forEach((skin, index) => {
+        const card = createSkinCard(skin, index);
+        grid.appendChild(card);
+    });
+
+    initTilt();
+}
+
+// Create individual skin card DOM
+function createSkinCard(skin, index) {
+    const card = document.createElement('article');
+    card.className = 'bento-glass skin-bento-card';
+
+    const localSrc = skin.customUrl || `upload/${encodeURIComponent(skin.file)}`;
+    const skinName = skin.name || skin.file.replace(/\.[^/.]+$/, "");
+
+    card.innerHTML = `
+        <div class="skin-card-header">
+            <span class="skin-badge-pill">
+                <span class="skin-badge-dot"></span>
+                <span>Minecraft Skin</span>
+            </span>
+            <span class="skin-dimension" id="dim-${index}">64x64 PNG</span>
+        </div>
+
+        <div class="skin-preview-stage" title="Klik untuk salin command & lihat detail">
+            <canvas class="skin-char-canvas" id="canvas-${index}" style="width: 72px; height: 144px;"></canvas>
+            
+            <div class="skin-texture-thumbnail" title="Tekstur PNG Asli">
+                <img src="${localSrc}" alt="${skinName} Texture" id="thumb-${index}">
+            </div>
+
+            <div class="click-hint-overlay">
+                <span><i class="fas fa-copy"></i> Klik untuk Salin</span>
+            </div>
+        </div>
+
+        <div class="skin-info-wrap">
+            <div class="skin-name-row">
+                <h3 class="skin-title" title="${skinName}">${skinName}</h3>
+                <span class="skin-tag">#${index + 1}</span>
+            </div>
+
+            <div class="cmd-preview-box" title="Klik untuk salin command">
+                <div class="cmd-prefix">
+                    <span>Command Minecraft</span>
+                    <i class="far fa-copy"></i>
+                </div>
+                <code class="cmd-text">
+                    <span class="cmd-highlight">/skin url</span> "${getSkinImageUrl(skin)}"
+                </code>
+            </div>
+
+            <div class="card-actions-grid">
+                <button class="btn-card-copy" id="btn-copy-${index}">
+                    <i class="far fa-copy"></i>
+                    <span>Salin Command</span>
+                </button>
+                <button class="btn-card-icon" id="btn-modal-${index}" title="Lihat Detail & Download">
+                    <i class="fas fa-expand"></i>
+                </button>
+            </div>
+        </div>
+    `;
+
+    // Load skin image & render to 2D Canvas with fallback
+    const img = new Image();
+    if (localSrc.startsWith('http') && !localSrc.startsWith(window.location.origin)) {
+        img.crossOrigin = "anonymous";
+    }
+
+    img.onload = () => {
+        const canvas = card.querySelector(`#canvas-${index}`);
+        renderMinecraftSkin(img, canvas);
+        const dimEl = card.querySelector(`#dim-${index}`);
+        if (dimEl) {
+            dimEl.textContent = `${img.naturalWidth}x${img.naturalHeight} PNG`;
+        }
     };
 
-    if (!message) {
-        showStatus('Pesan ga boleh kosong!', '#ff4757');
-        return;
-    }
-
-    if (DISCORD_WEBHOOK_URL === "YOUR_DISCORD_WEBHOOK_URL_HERE") {
-        showStatus('Webhook URL belum diisi di script.js! Beritahu Admin.', '#ffa502');
-        return;
-    }
-
-    sendBtn.disabled = true;
-    sendBtn.style.opacity = '0.5';
-    sendBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Mengirim...';
-
-    try {
-        const response = await fetch(DISCORD_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                content: "<@758184274330648597> You got a new secret message!",
-                username: "Anonymous Dakon",
-                avatar_url: "https://cdn-icons-png.flaticon.com/512/3011/3011270.png",
-                embeds: [{
-                    title: "💌 New Secret Message!",
-                    description: "```\n" + message + "\n```",
-                    color: 16729344,
-                    timestamp: new Date().toISOString()
-                }]
-            })
-        });
-
-        if (response.ok) {
-            input.value = '';
-            showStatus('Pesan rahasia berhasil terkirim!', '#2ed573');
-        } else {
-            throw new Error('Failed to send');
+    img.onerror = () => {
+        // Fallback to GitHub raw URL if local file path fails
+        const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/upload/${encodeURIComponent(skin.file)}`;
+        if (img.src !== rawUrl) {
+            img.crossOrigin = "anonymous";
+            img.src = rawUrl;
+            const thumb = card.querySelector(`#thumb-${index}`);
+            if (thumb) thumb.src = rawUrl;
         }
-    } catch (error) {
-        console.error("Webhook error:", error);
-        showStatus('Gagal ngirim pesan, coba lagi ya.', '#ff4757');
-    } finally {
-        sendBtn.disabled = false;
-        sendBtn.style.opacity = '1';
-        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Pesan';
+    };
+
+    img.src = localSrc;
+
+    // EVENT LISTENERS:
+    // 1. Clicking on the stage copies command and opens modal
+    const stage = card.querySelector('.skin-preview-stage');
+    stage.addEventListener('click', () => {
+        const cmd = generateSkinCommand(skin);
+        copyToClipboard(cmd, `Command tersalin! Siap paste di Minecraft.`);
+        openSkinModal(skin, img);
+    });
+
+    // 2. Clicking on the command box copies command
+    const cmdBox = card.querySelector('.cmd-preview-box');
+    cmdBox.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cmd = generateSkinCommand(skin);
+        copyToClipboard(cmd, `Command tersalin! Siap paste di Minecraft.`);
+    });
+
+    // 3. Salin Command button
+    const copyBtn = card.querySelector(`#btn-copy-${index}`);
+    copyBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const cmd = generateSkinCommand(skin);
+        copyToClipboard(cmd, `Command tersalin: /skin url "..."`);
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = `<i class="fas fa-check"></i> <span>Tersalin!</span>`;
+        setTimeout(() => {
+            copyBtn.classList.remove('copied');
+            copyBtn.innerHTML = `<i class="far fa-copy"></i> <span>Salin Command</span>`;
+        }, 2000);
+    });
+
+    // 4. Modal expand button
+    const modalBtn = card.querySelector(`#btn-modal-${index}`);
+    modalBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openSkinModal(skin, img);
+    });
+
+    return card;
+}
+
+// ==========================================
+// SKIN INSPECTOR MODAL
+// ==========================================
+function openSkinModal(skin, preloadedImg) {
+    selectedSkin = skin;
+    const modal = document.getElementById('skin-modal');
+    if (!modal) return;
+
+    const modalTitle = document.getElementById('modal-skin-title');
+    const modalFile = document.getElementById('modal-skin-file');
+    const modalCmd = document.getElementById('modal-cmd-text');
+    const modalTexture = document.getElementById('modal-texture-img');
+    const modalCanvas = document.getElementById('modal-char-canvas');
+
+    const skinName = skin.name || skin.file.replace(/\.[^/.]+$/, "");
+    const imgUrl = getSkinImageUrl(skin);
+
+    if (modalTitle) modalTitle.textContent = skinName;
+    if (modalFile) modalFile.textContent = skin.file || 'custom-skin.png';
+
+    if (modalCmd) {
+        modalCmd.innerHTML = `<span class="hl-skin">/skin url</span> <span class="hl-quote">"${imgUrl}"</span>`;
+    }
+
+    const localSrc = skin.customUrl || `upload/${encodeURIComponent(skin.file)}`;
+    if (modalTexture) {
+        modalTexture.src = localSrc;
+    }
+
+    if (modalCanvas) {
+        if (preloadedImg && preloadedImg.complete && preloadedImg.naturalWidth > 0) {
+            renderMinecraftSkin(preloadedImg, modalCanvas);
+        } else {
+            const tempImg = new Image();
+            if (localSrc.startsWith('http') && !localSrc.startsWith(window.location.origin)) {
+                tempImg.crossOrigin = "anonymous";
+            }
+            tempImg.onload = () => renderMinecraftSkin(tempImg, modalCanvas);
+            tempImg.onerror = () => {
+                const rawUrl = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/upload/${encodeURIComponent(skin.file)}`;
+                tempImg.crossOrigin = "anonymous";
+                tempImg.src = rawUrl;
+            };
+            tempImg.src = localSrc;
+        }
+    }
+
+    modal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeSkinModal() {
+    const modal = document.getElementById('skin-modal');
+    if (modal) {
+        modal.classList.remove('active');
+    }
+    document.body.style.overflow = '';
+}
+
+// ==========================================
+// SEARCH FILTER
+// ==========================================
+function initSearch() {
+    const input = document.getElementById('skin-search');
+    if (!input) return;
+
+    input.addEventListener('input', (e) => {
+        const query = e.target.value.trim().toLowerCase();
+        if (!query) {
+            renderGallery(loadedSkins);
+            return;
+        }
+
+        const filtered = loadedSkins.filter(skin => {
+            const name = (skin.name || skin.file).toLowerCase();
+            return name.includes(query);
+        });
+        renderGallery(filtered);
+    });
+}
+
+// ==========================================
+// URL SOURCE SELECTOR
+// ==========================================
+function initSourceSelector() {
+    const sel = document.getElementById('source-mode-select');
+    if (!sel) return;
+
+    sel.addEventListener('change', (e) => {
+        activeUrlMode = e.target.value;
+        renderGallery(loadedSkins);
+        showToast(`Format URL: ${activeUrlMode === 'github_raw' ? 'GitHub Raw (Minecraft Ready)' : 'Website Domain'}`);
+    });
+}
+
+// ==========================================
+// DRAG & DROP / TEST LOCAL SKIN
+// ==========================================
+function initDropzone() {
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('skin-file-input');
+
+    if (!dropzone || !fileInput) return;
+
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.add('drag-over');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropzone.classList.remove('drag-over');
+        });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const files = e.dataTransfer.files;
+        if (files && files.length > 0) {
+            handleSkinFileUpload(files[0]);
+        }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            handleSkinFileUpload(e.target.files[0]);
+        }
+    });
+}
+
+function handleSkinFileUpload(file) {
+    if (!file.type.includes('png') && !file.name.endsWith('.png')) {
+        showToast('Mohon upload file PNG skin Minecraft!', 'fa-exclamation-triangle');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        const newSkin = {
+            file: file.name,
+            name: file.name.replace(/\.[^/.]+$/, ""),
+            customUrl: dataUrl,
+            category: "Uploaded Local"
+        };
+
+        // Add to state and persist
+        loadedSkins.unshift(newSkin);
+        try {
+            const saved = JSON.parse(localStorage.getItem('dakon_custom_skins') || '[]');
+            saved.unshift(newSkin);
+            localStorage.setItem('dakon_custom_skins', JSON.stringify(saved.slice(0, 20)));
+        } catch (_) {}
+
+        renderGallery(loadedSkins);
+
+        // Close upload modal
+        const uploadModal = document.getElementById('upload-modal');
+        if (uploadModal) uploadModal.classList.remove('active');
+        document.body.style.overflow = '';
+
+        showToast(`Skin "${newSkin.name}" berhasil ditambahkan!`);
+        
+        // Auto open inspector modal
+        const tempImg = new Image();
+        tempImg.onload = () => openSkinModal(newSkin, tempImg);
+        tempImg.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+}
+
+// ==========================================
+// TILT INITIALIZATION (Identical to index.html)
+// ==========================================
+function initTilt() {
+    if (window.innerWidth > 768 && typeof VanillaTilt !== 'undefined') {
+        VanillaTilt.init(document.querySelectorAll(".bento-glass"), {
+            max: 5,
+            speed: 400,
+            glare: true,
+            "max-glare": 0.15
+        });
     }
 }
+
+// ==========================================
+// INITIALIZATION
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Particles.js (Matching index.html exactly)
+    if (typeof particlesJS !== 'undefined') {
+        particlesJS('particles-js', {
+            "particles": {
+                "number": { "value": 80, "density": { "enable": true, "value_area": 800 } },
+                "color": { "value": "#ffffff" },
+                "shape": { "type": "circle" },
+                "opacity": {
+                    "value": 0.5,
+                    "random": true,
+                    "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false }
+                },
+                "size": {
+                    "value": 3,
+                    "random": true,
+                    "anim": { "enable": false, "speed": 40, "size_min": 0.1, "sync": false }
+                },
+                "line_linked": {
+                    "enable": true,
+                    "distance": 150,
+                    "color": "#7289da",
+                    "opacity": 0.2,
+                    "width": 1
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 2,
+                    "direction": "none",
+                    "random": false,
+                    "straight": false,
+                    "out_mode": "out",
+                    "bounce": false,
+                    "attract": { "enable": false, "rotateX": 600, "rotateY": 1200 }
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": { "enable": true, "mode": "grab" },
+                    "onclick": { "enable": true, "mode": "push" },
+                    "resize": true
+                },
+                "modes": {
+                    "grab": { "distance": 140, "line_linked": { "opacity": 1 } },
+                    "bubble": { "distance": 400, "size": 40, "duration": 2, "opacity": 8, "speed": 3 },
+                    "repulse": { "distance": 200, "duration": 0.4 },
+                    "push": { "particles_nb": 4 },
+                    "remove": { "particles_nb": 2 }
+                }
+            },
+            "retina_detect": true
+        });
+    }
+
+    // 2. Entrance Animation (Matching index.html)
+    const card = document.querySelector('.profile-card');
+    if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateY(30px) rotateX(10deg)';
+
+        setTimeout(() => {
+            card.style.transition = 'all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1)';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0) rotateX(0)';
+        }, 100);
+    }
+
+    initTilt();
+    initSearch();
+    initSourceSelector();
+    initDropzone();
+    loadSkins();
+
+    // Modal Event Listeners
+    const modal = document.getElementById('skin-modal');
+    const closeBtn = document.getElementById('btn-close-modal');
+    if (closeBtn) closeBtn.addEventListener('click', closeSkinModal);
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeSkinModal();
+        });
+    }
+
+    // Modal Action Buttons
+    const btnModalCopyCmd = document.getElementById('btn-modal-copy-cmd');
+    if (btnModalCopyCmd) {
+        btnModalCopyCmd.addEventListener('click', () => {
+            if (!selectedSkin) return;
+            const cmd = generateSkinCommand(selectedSkin);
+            copyToClipboard(cmd, `Command tersalin: /skin url "..."`);
+            btnModalCopyCmd.classList.add('copied');
+            btnModalCopyCmd.innerHTML = `<i class="fas fa-check"></i> <span>Command Tersalin!</span>`;
+            setTimeout(() => {
+                btnModalCopyCmd.classList.remove('copied');
+                btnModalCopyCmd.innerHTML = `<i class="fas fa-copy"></i> <span>Salin Command</span>`;
+            }, 2000);
+        });
+    }
+
+    const btnModalCopyUrl = document.getElementById('btn-modal-copy-url');
+    if (btnModalCopyUrl) {
+        btnModalCopyUrl.addEventListener('click', () => {
+            if (!selectedSkin) return;
+            const url = getSkinImageUrl(selectedSkin);
+            copyToClipboard(url, `URL gambar tersalin!`);
+        });
+    }
+
+    const btnModalDownload = document.getElementById('btn-modal-download');
+    if (btnModalDownload) {
+        btnModalDownload.addEventListener('click', () => {
+            if (!selectedSkin) return;
+            const src = selectedSkin.customUrl || `upload/${encodeURIComponent(selectedSkin.file)}`;
+            const a = document.createElement('a');
+            a.href = src;
+            a.download = selectedSkin.file;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast(`Mengunduh ${selectedSkin.file}...`, 'fa-download');
+        });
+    }
+
+    // Upload Modal Trigger
+    const btnOpenUpload = document.getElementById('btn-open-upload');
+    const uploadModal = document.getElementById('upload-modal');
+    const btnCloseUpload = document.getElementById('btn-close-upload');
+
+    if (btnOpenUpload && uploadModal) {
+        btnOpenUpload.addEventListener('click', () => {
+            uploadModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+    }
+
+    if (btnCloseUpload && uploadModal) {
+        btnCloseUpload.addEventListener('click', () => {
+            uploadModal.classList.remove('active');
+            document.body.style.overflow = '';
+        });
+    }
+
+    if (uploadModal) {
+        uploadModal.addEventListener('click', (e) => {
+            if (e.target === uploadModal) {
+                uploadModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
+    }
+
+    // ESC key closes any open modal
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeSkinModal();
+            if (uploadModal) {
+                uploadModal.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        }
+    });
+});
